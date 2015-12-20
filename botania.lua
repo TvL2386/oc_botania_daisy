@@ -10,6 +10,9 @@
 -- Botania livingrock and livingwood. These are used for comparison with
 -- items to break below in the move loop
 -- Don't put any other items in the inventory
+--
+-- Overview: https://dl.dropboxusercontent.com/u/93318356/oc_botania_daisy/oc_botania_daisy_overview.png
+-- ME Interface contents: https://dl.dropboxusercontent.com/u/93318356/oc_botania_daisy/oc_botania_daisy_me_interface.png
 
 robot = require("robot")
 component = require("component")
