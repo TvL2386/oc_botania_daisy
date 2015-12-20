@@ -30,8 +30,8 @@ local pickaxe_slot = 13
 -- also fetches resources to place around the daisy
 function crafting_needed()
   -- determine how much stone and/or log we need to fetch
-  local required_stone = 0
-  local required_log = 0
+  local required_stone = 64
+  local required_log = 64
   local places_in_inventory = 8
 
   local slot_count = ic.getInventorySize(3)
