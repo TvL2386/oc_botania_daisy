@@ -11,8 +11,8 @@
 -- items to break below in the move loop
 -- Don't put any other items in the inventory
 --
--- Overview: https://dl.dropboxusercontent.com/u/93318356/oc_botania_daisy/oc_botania_daisy_overview.png
--- ME Interface contents: https://dl.dropboxusercontent.com/u/93318356/oc_botania_daisy/oc_botania_daisy_me_interface.png
+-- Overview: https://www.dropbox.com/s/wr866w3sb2b0b3g/oc_botania_daisy_overview.png?dl=0
+-- ME Interface contents: https://www.dropbox.com/s/8mft8h2jfxizy2v/oc_botania_daisy_me_interface.png?dl=0
 
 robot = require("robot")
 component = require("component")
