@@ -1,0 +1,200 @@
+robot = require("robot")
+component = require("component")
+sides = require("sides")
+
+ic_address = component.inventory_controller.address
+ic = component.proxy(ic_address)
+
+local pickaxe_slot = 13
+
+function suck_items()
+  -- how much botania items we want
+  local lwood_count = 0
+  local lstone_count = 0
+
+  -- how much wood/stone we need
+  local wood_needed = 0
+  local stone_needed = 0
+
+  -- slot count of the inventory to the front of me
+  local slot_count = ic.getInventorySize(sides.front)
+
+  -- loop through the slots to see what's there
+  for slot = 1,slot_count do
+    local item_stack = ic.getStackInSlot(sides.front, slot)
+
+    if item_stack then
+      -- print("Slot "..slot.." is: "..item_stack.name)
+
+      if item_stack.name == "botania:livingwood" then
+        lwood_count = item_stack.size
+        wood_needed = 64 - lwood_count
+        print("I need "..wood_needed.." wood")
+      elseif item_stack.name == "botania:livingrock" then
+        lrock_count = item_stack.size
+        stone_needed = 64 - lrock_count
+        print("I need "..stone_needed.." stone")
+      end
+    end
+  end
+
+  if wood_needed <= 0.0 and stone_needed <= 0.0 then
+    print("Nothing to do for me")
+    return false
+  end
+
+  -- get wood and/or stone
+  local sucked = 0.0
+  local did_suck = false
+
+  for slot = 1,slot_count do
+    local item_stack = ic.getStackInSlot(sides.front, slot)
+
+    if item_stack then
+      if sucked < 8.0 then
+        if item_stack.name == "minecraft:log" and wood_needed > 0.0 then
+          print("Sucking wood")
+
+          local can_suck = (wood_needed > 8.0) and 8.0 or wood_needed
+          sucked = sucked + suckWithLocalCheck(1, slot, can_suck)
+          did_suck = true
+        elseif item_stack.name == "minecraft:stone" and stone_needed > 0.0 then
+          print("Sucking stone")
+
+          local can_suck = (stone_needed > 8.0) and 8.0 or stone_needed
+          sucked = sucked + suckWithLocalCheck(2, slot, can_suck)
+          did_suck = true
+        end
+      else
+        if string.match(item_stack.name, "minecraft:.+pickaxe") then
+          print("Sucking pickaxe if needed")
+          suckWithLocalCheck(pickaxe_slot, slot, 1)
+        end
+      end
+    end
+  end
+
+  if did_suck then
+    return true
+  else
+    print("Could not suck any items :-(")
+    return false
+  end
+end
+
+function suckWithLocalCheck(local_slot, remote_slot, count)
+  robot.select(local_slot)
+
+  local item_stack = ic.getStackInInternalSlot(local_slot)
+
+  if item_stack then
+    local to_suck = count - item_stack.size
+
+    ic.suckFromSlot(sides.front, remote_slot, to_suck)
+    return to_suck
+  end
+  
+  ic.suckFromSlot(sides.front, remote_slot, count)
+  return count
+end
+
+function execute_action(action)
+  if action == "place" then
+    place()
+  elseif action == "collect" then
+    equip_pickaxe()
+    robot.swingDown()
+  end
+end
+
+function place()
+  for slot=1,2 do
+    local item = ic.getStackInInternalSlot(slot)
+    if item then
+      robot.select(slot)
+      robot.placeDown()
+      return true
+    end
+  end
+end
+
+function await_transformation()
+  while true do
+    for slot=15,16 do
+      robot.select(slot)
+
+      if robot.compareDown() then
+        return true
+      end
+    end
+    os.sleep(1)
+  end
+end
+
+function equip_pickaxe()
+  local number, message = robot.durability()
+  if message == "no tool equipped" then
+    robot.select(pickaxe_slot)
+    ic.equip()
+  end
+end
+
+function walk(action)
+  for c1=1,4 do
+    turnRight()
+    execute_action(action)
+
+    forward()
+    execute_action(action)
+    forward()
+  end
+end
+
+function turnRight()
+  robot.turnRight()
+end
+
+function forward()
+  while not robot.forward() do os.sleep(1) end
+end
+
+function place_items()
+  print("Placing items")
+  walk("place")
+end
+
+function collect_items()
+  print("Awaiting transformation")
+  await_transformation()
+  print("Collecting items")
+  walk("collect")
+end
+
+function drop_items()
+  for slot=15,16 do
+    local item_stack = ic.getStackInInternalSlot(slot)
+    
+    if item_stack and item_stack.size > 1.0 then
+      robot.select(slot)
+      robot.drop(item_stack.size-1.0)
+    end
+  end
+end
+
+function run()
+  if suck_items() then
+    place_items()
+    collect_items()
+    drop_items()
+    return true
+  end
+
+  return false
+end
+
+while true do
+  if not run() then
+    os.sleep(4)
+  end
+end
+
